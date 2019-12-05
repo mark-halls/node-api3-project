@@ -8,6 +8,7 @@ const validateUserId = async (req, res, next) => {
 
     if (user) {
       req.user = user;
+      next();
     } else {
       res.status(400).json({ message: `invalid user id` });
     }
@@ -16,8 +17,6 @@ const validateUserId = async (req, res, next) => {
       .status(500)
       .json({ errorMessage: `Error getting users from the database`, error });
   }
-
-  next();
 };
 
 module.exports = validateUserId;
