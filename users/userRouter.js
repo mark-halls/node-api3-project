@@ -1,27 +1,44 @@
 const express = require("express");
 
 const router = express.Router();
+router.use(express.json());
 
 const validateUserId = require(`../api/middleware/validateUserId`);
+const validatePost = require(`../api/middleware/validatePost`);
+const validateUser = require(`../api/middleware/validateUser`);
 
-const db = require(`./userDb`);
+const userDb = require(`./userDb`);
+const postDb = require(`../posts/postDb`);
 
 const errorMessage = (res, status, msg, error) => {
   console.error(msg, error);
   res.status(status).json({ errorMessage: msg });
 };
 
-router.post("/", (req, res) => {
+router.post("/", validateUser, (req, res) => {
   // do your magic!
+  userDb
+    .insert(req.body)
+    .then(user => res.status(201).json(user))
+    .catch(error =>
+      errorMessage(res, 500, `Error adding user to the database`, error)
+    );
 });
 
-router.post("/:id/posts", validateUserId, (req, res) => {
+router.post("/:id/posts", [validateUserId, validatePost], (req, res) => {
   // do your magic!
+  postDb
+    .insert({ user_id: req.user.id, ...req.body })
+    .then(post => res.status(201).json(post))
+    .catch(error =>
+      errorMessage(res, 500, `error adding post to the database`, error)
+    );
 });
 
 router.get("/", (req, res) => {
   // do your magic!
-  db.get()
+  userDb
+    .get()
     .then(users => res.status(200).json(users))
     .catch(error =>
       errorMessage(res, 500, `Error getting users from the database`, error)
@@ -35,7 +52,8 @@ router.get("/:id", validateUserId, (req, res) => {
 
 router.get("/:id/posts", validateUserId, (req, res) => {
   // do your magic!
-  db.getUserPosts(req.user.id)
+  userDb
+    .getUserPosts(req.user.id)
     .then(posts => res.status(200).json(posts))
     .catch(error =>
       errorMessage(
@@ -49,10 +67,22 @@ router.get("/:id/posts", validateUserId, (req, res) => {
 
 router.delete("/:id", validateUserId, (req, res) => {
   // do your magic!
+  userDb
+    .remove(req.user.id)
+    .then(user => res.status(202).json(user))
+    .catch(error =>
+      errorMessage(res, 500, `error removing user from the database`, error)
+    );
 });
 
-router.put("/:id", validateUserId, (req, res) => {
+router.put("/:id", [validateUser, validateUserId], (req, res) => {
   // do your magic!
+  userDb
+    .update(req.user.id, req.body)
+    .then(user => res.status(201).json(user))
+    .catch(error =>
+      errorMessage(res, 500, `error updating the user on the database`, error)
+    );
 });
 
 module.exports = router;
